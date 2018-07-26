@@ -48,7 +48,7 @@ func TestValidate(t *testing.T) {
 			expectedResult: fmt.Errorf("invalid number of agentPoolProfiles"),
 		},
 		{
-			name: "invalid number of agentPoolProfiles",
+			name: "non-identical vnetSubnetID",
 			cs: &api.ContainerService{
 				Properties: &api.Properties{
 					OrchestratorProfile: &api.OrchestratorProfile{
