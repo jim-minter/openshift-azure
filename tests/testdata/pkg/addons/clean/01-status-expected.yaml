@@ -1,0 +1,3 @@
+kind: test_kind
+apiVersion: test_version
+status:

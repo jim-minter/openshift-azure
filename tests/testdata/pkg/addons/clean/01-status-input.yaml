@@ -1,0 +1,4 @@
+kind: Pod
+apiVersion: test_version
+status:
+  test: test_status
