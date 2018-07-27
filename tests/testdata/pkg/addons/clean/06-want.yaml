@@ -1,0 +1,6 @@
+kind: test_kind
+apiVersion: test_version
+type: test
+stringData:
+  data: "ačiū"
+

@@ -1,0 +1,8 @@
+kind: test_kind
+apiVersion: test_version
+metadata: 
+  annotations:
+    test_annotation: ačiū
+    openshift.io/sa.scc.mcs: test
+    openshift.io/sa.scc.supplemental-groups: test
+    openshift.io/sa.scc.uid-range: test

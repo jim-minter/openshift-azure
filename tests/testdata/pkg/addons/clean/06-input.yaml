@@ -1,3 +1,5 @@
 kind: test_kind
 apiVersion: test_version
-status:
+type: test
+data:
+  data: "YcSNacWr"

@@ -1,0 +1,9 @@
+kind: test_kind
+apiVersion: test_version
+type: kubernetes.io/service-account-token
+metadata:
+  annotations: 
+    kubernetes.io/service-account.uid: "test"
+    test: test
+data:
+  data: "ačiū"

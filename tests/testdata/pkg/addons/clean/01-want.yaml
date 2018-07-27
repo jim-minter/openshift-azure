@@ -1,0 +1,2 @@
+kind: Pod
+apiVersion: test_version

@@ -1,0 +1,5 @@
+kind: test_kind
+apiVersion: test_version
+metadata:
+  annotations:
+    test_annotation: ačiū
