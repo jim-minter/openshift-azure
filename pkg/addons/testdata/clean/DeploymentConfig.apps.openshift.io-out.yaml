@@ -1,37 +1,31 @@
---- 
-apiVersion: test_version
-kind: test_kind
-metadata: 
-  annotations: 
-    deprecated.daemonset.template.generation: test_value
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
     test_annotation: ačiū
-  uid: test
-spec: 
-  template: 
-    command: 
+spec:
+  template:
+    command:
       - sh
       - "-c"
       - "until nslookup mydb; do echo waiting for mydb; sleep 2; done;"
-    spec: 
-      containers: 
-        - 
-          command: 
+    spec:
+      containers:
+        -
+          command:
             - sh
             - "-c"
             - "echo The app is running! && sleep 3600"
           image: busybox
           name: myapp-container
-          imagePullPolicy: Always
-      initContainers: 
-        - 
-          command: 
+      initContainers:
+        -
+          command:
             - sh
             - "-c"
             - "until nslookup myservice; do echo waiting for myservice; sleep 2; done;"
           image: busybox
           name: init-myservice
-          imagePullPolicy: Always
-        - 
+        -
           image: busybox
           name: init-mydb
-          imagePullPolicy: Always

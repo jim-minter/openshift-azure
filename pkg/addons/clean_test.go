@@ -1,102 +1,43 @@
 package addons
 
 import (
-	"fmt"
 	"io/ioutil"
-	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
-	"github.com/ghodss/yaml"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"github.com/go-test/deep"
 )
 
 func TestClean(t *testing.T) {
-	tests := []struct {
-		name    string
-		index   int
-		objects []string
-		input   unstructured.Unstructured
-		want    unstructured.Unstructured
-	}{
-		{
-			name:    "Status clean",
-			index:   1,
-			objects: []string{"Pod"},
-		},
-		{
-			name:    "DaemonSet.apps/Deployments/DeploymentConfigs clean",
-			index:   2,
-			objects: []string{"DaemonSet.apps", "Deployment.apps", "DeploymentConfig.apps.openshift.io"},
-		},
-		{
-			name:    "Namespace clean",
-			index:   3,
-			objects: []string{"Namespace"},
-		},
-		{
-			name:    "ImageStream.image.openshift.io clean",
-			index:   4,
-			objects: []string{"ImageStream.image.openshift.io"},
-		},
-		{
-			name:    "Secret clean",
-			index:   5,
-			objects: []string{"Secret"},
-		},
-		{
-			name:    "Secret convert",
-			index:   6,
-			objects: []string{"Secret"},
-		},
-		{
-			name:    "Service clean",
-			index:   7,
-			objects: []string{"Service"},
-		},
+	matches, err := filepath.Glob("testdata/clean/*-in.yaml")
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	for _, tt := range tests {
-		dir, err := os.Getwd()
+	for _, match := range matches {
+		b, err := ioutil.ReadFile(match)
 		if err != nil {
-			t.Errorf("Test failed: %v", err)
+			t.Error(err)
 		}
-		// input parsing
-		input, err := ioutil.ReadFile(fmt.Sprintf("%s/../../tests/testdata/pkg/addons/clean/%02d-input.yaml", dir, tt.index))
+		i, err := unmarshal(b)
 		if err != nil {
-			t.Errorf("Test failed: %v", err)
-		}
-		jsonInput, err := yaml.YAMLToJSON(input)
-		if err != nil {
-			t.Errorf("Test failed: %v", err)
-		}
-		_, _, err = unstructured.UnstructuredJSONScheme.Decode(jsonInput, nil, &tt.input)
-		if err != nil {
-			t.Errorf("Test failed: %v", err)
+			t.Error(err)
 		}
 
-		// want parsing
-		want, err := ioutil.ReadFile(fmt.Sprintf("%s/../../tests/testdata/pkg/addons/clean/%02d-want.yaml", dir, tt.index))
+		b, err = ioutil.ReadFile(strings.Replace(match, "-in.yaml", "-out.yaml", -1))
 		if err != nil {
-			t.Errorf("Test failed: %v", err)
+			t.Error(err)
 		}
-		jsonWant, err := yaml.YAMLToJSON(want)
+		o, err := unmarshal(b)
 		if err != nil {
-			t.Errorf("Test failed: %v", err)
-		}
-		_, _, err = unstructured.UnstructuredJSONScheme.Decode(jsonWant, nil, &tt.want)
-		if err != nil {
-			t.Errorf("Test failed: %v", err)
+			t.Error(err)
 		}
 
-		for _, obj := range tt.objects {
-			tt.input.Object["kind"] = obj
-			tt.want.Object["kind"] = obj
-			Clean(tt.input)
-			if !reflect.DeepEqual(tt.input, tt.want) {
-				t.Errorf("fail: %#v \n%#v\n%#v", tt.name, tt.input, tt.want)
-			}
+		Clean(i)
+		if !reflect.DeepEqual(i, o) {
+			t.Errorf("%s:\n%s", match, strings.Join(deep.Equal(i, o), "\n"))
 		}
 	}
 }
