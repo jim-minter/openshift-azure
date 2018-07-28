@@ -192,7 +192,7 @@
             "properties": {
                 "overprovision": false,
                 "upgradePolicy": {
-                    "mode": "Manual"
+                    "mode": "{{if eq $app.Role `master`}}Rolling{{else}}Manual{{end}}"
                 },
                 "virtualMachineProfile": {
                     "osProfile": {
@@ -275,6 +275,11 @@
                                 }
                             }
                         ]
+{{- if eq $app.Role "master" }},
+                        "healthProbe": {
+                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'lb-apiserver'), '/probes/port-443')]"
+                        }
+{{- end }}
                     },
                     "extensionProfile": {
                         "extensions": [
