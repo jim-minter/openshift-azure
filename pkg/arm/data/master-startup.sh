@@ -486,7 +486,7 @@ spec:
     - master
     - api
     - --config=/etc/origin/master/master-config.yaml
-    - --loglevel=2
+    - --loglevel=4
     command:
     - openshift
     image: {{ .Config.ControlPlaneImage | quote }}
@@ -539,7 +539,7 @@ spec:
     - controllers
     - --config=/etc/origin/master/master-config.yaml
     - --listen=https://0.0.0.0:444
-    - --loglevel=2
+    - --loglevel=4
     command:
     - openshift
     image: {{ .Config.ControlPlaneImage | quote }}

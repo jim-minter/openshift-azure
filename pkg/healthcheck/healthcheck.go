@@ -50,7 +50,7 @@ func NewSimpleHealthChecker(entry *logrus.Entry) HealthChecker {
 
 // HealthCheck function to verify cluster health
 func (hc *simpleHealthChecker) HealthCheck(ctx context.Context, cs *acsapi.OpenShiftManagedCluster) error {
-	kc, err := newClientSet(ctx, cs.Config.AdminKubeconfig)
+	kc, err := NewClientSet(ctx, cs.Config.AdminKubeconfig)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (hc *simpleHealthChecker) waitForConsole(ctx context.Context, cs *acsapi.Op
 	}
 }
 
-func newClientSet(ctx context.Context, config *v1.Config) (*kubernetes.Clientset, error) {
+func NewClientSet(ctx context.Context, config *v1.Config) (*kubernetes.Clientset, error) {
 	kubeconfig, err := getKubeconfigFromV1Config(config)
 	if err != nil {
 		return nil, err
