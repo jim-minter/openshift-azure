@@ -3,8 +3,11 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
+	"unicode"
 )
 
 var unmarshalled = &OpenShiftManagedCluster{
@@ -178,4 +181,57 @@ func TestUnmarshal(t *testing.T) {
 	if !reflect.DeepEqual(oc, unmarshalled) {
 		t.Errorf("json.Unmarshal returned unexpected result\n%#v\n", oc)
 	}
+}
+
+// TestJSONTags ensures that all the `json:"..."` struct field tags under
+// OpenShiftManagedCluster correspond with their field names
+func TestJSONTags(t *testing.T) {
+	for _, err := range testJSONTags(reflect.TypeOf(OpenShiftManagedCluster{})) {
+		t.Error(err)
+	}
+}
+
+// toTag converts a field name like ImageSKU to imageSku
+func toTag(s string) string {
+	if s == "ServiceCatalogAPIClient" {
+		// should be serviceCatalogApiClient, but isn't.  TODO: maybe fix this
+		// one day.
+		return "serviceCatalogAPIClient"
+	}
+
+	for _, acronym := range []string{"API", "FQDN", "HTTP", "ID", "SKU", "SSH", "VM"} {
+		lower := string(acronym[0]) + strings.Map(unicode.ToLower, acronym[1:])
+		s = strings.Replace(s, acronym, lower, -1)
+	}
+
+	return string(unicode.ToLower(rune(s[0]))) + s[1:]
+}
+
+func testJSONTags(t reflect.Type) (errs []error) {
+	switch t.Kind() {
+	case reflect.Ptr:
+		errs = append(errs, testJSONTags(t.Elem())...)
+
+	case reflect.Struct:
+		if !strings.HasPrefix(t.PkgPath(), "github.com/openshift/openshift-azure/") ||
+			strings.HasPrefix(t.PkgPath(), "github.com/openshift/openshift-azure/vendor/") {
+			return
+		}
+
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			tag := f.Tag.Get("json")
+			parts := strings.Split(tag, ",")
+			if len(parts) != 2 || parts[1] != "omitempty" {
+				errs = append(errs, fmt.Errorf("invalid tag %s", tag))
+			}
+			if toTag(f.Name) != parts[0] {
+				errs = append(errs, fmt.Errorf("%s: tag name mismatch: wanted %s, got %s", f.Name, toTag(f.Name), parts[0]))
+			}
+
+			errs = append(errs, testJSONTags(f.Type)...)
+		}
+	}
+
+	return
 }
