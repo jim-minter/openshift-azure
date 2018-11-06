@@ -1,4 +1,4 @@
-package api
+package api_test
 
 import (
 	"bytes"
@@ -6,7 +6,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/ghodss/yaml"
+
+	. "github.com/openshift/openshift-azure/pkg/api/2018-09-30-preview/api"
 	"github.com/openshift/openshift-azure/pkg/util/structtags"
+	"github.com/openshift/openshift-azure/test/util/populate"
 )
 
 var unmarshalled = &OpenShiftManagedCluster{
@@ -159,6 +163,50 @@ var marshalled = []byte(`{
 	}
 }`)
 
+var marshalledYaml = []byte(`id: ID
+location: Location
+name: Name
+plan:
+  name: Plan.Name
+  product: Plan.Product
+  promotionCode: Plan.PromotionCode
+  publisher: Plan.Publisher
+properties:
+  agentPoolProfiles:
+  - count: 1
+    name: Properties.AgentPoolProfiles[0].Name
+    osType: Properties.AgentPoolProfiles[0].OSType
+    role: Properties.AgentPoolProfiles[0].Role
+    subnetCidr: Properties.AgentPoolProfiles[0].SubnetCIDR
+    vmSize: Properties.AgentPoolProfiles[0].VMSize
+  authProfile:
+    identityProviders:
+    - name: Properties.AuthProfile.IdentityProviders[0].Name
+      provider:
+        clientId: Properties.AuthProfile.IdentityProviders[0].Provider.ClientID
+        kind: AADIdentityProvider
+        secret: Properties.AuthProfile.IdentityProviders[0].Provider.Secret
+        tenantId: Properties.AuthProfile.IdentityProviders[0].Provider.TenantID
+  fqdn: Properties.FQDN
+  masterPoolProfile:
+    count: 1
+    subnetCidr: Properties.MasterPoolProfile.SubnetCIDR
+    vmSize: Properties.MasterPoolProfile.VMSize
+  networkProfile:
+    peerVnetId: Properties.NetworkProfile.PeerVnetID
+    vnetCidr: Properties.NetworkProfile.VnetCIDR
+  openShiftVersion: Properties.OpenShiftVersion
+  provisioningState: Properties.ProvisioningState
+  publicHostname: Properties.PublicHostname
+  routerProfiles:
+  - fqdn: Properties.RouterProfiles[0].FQDN
+    name: Properties.RouterProfiles[0].Name
+    publicSubdomain: Properties.RouterProfiles[0].PublicSubdomain
+tags:
+  Tags.key: Tags.val
+type: Type
+`)
+
 func TestMarshal(t *testing.T) {
 	b, err := json.MarshalIndent(unmarshalled, "", "\t")
 	if err != nil {
@@ -226,5 +274,34 @@ func TestJSONTags(t *testing.T) {
 	o := OpenShiftManagedCluster{}
 	for _, err := range structtags.CheckJsonTags(o) {
 		t.Errorf("mismatch in struct tags for %T: %s", o, err.Error())
+	}
+}
+
+func TestMarshallYaml(t *testing.T) {
+	populatedOc := OpenShiftManagedCluster{}
+	populate.Walk(&populatedOc)
+
+	b, err := yaml.Marshal(populatedOc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !bytes.Equal(b, marshalledYaml) {
+		t.Errorf("yaml.Marshall returned unexpected result\n%s\n%s\n", string(b), marshalledYaml)
+	}
+}
+
+func TestUnmarshallYaml(t *testing.T) {
+	populatedOc := OpenShiftManagedCluster{}
+	populate.Walk(&populatedOc)
+
+	var unmarshalledOc OpenShiftManagedCluster
+	err := yaml.Unmarshal(marshalledYaml, &unmarshalledOc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(populatedOc, unmarshalledOc) {
+		t.Errorf("yaml.Unmarshal returned unexpected result\n%#v\n", unmarshalledOc)
 	}
 }
