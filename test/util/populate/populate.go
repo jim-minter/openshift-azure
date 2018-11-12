@@ -2,14 +2,31 @@ package populate
 
 import (
 	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
-
-	internalapi "github.com/openshift/openshift-azure/pkg/api"
-	externalapi "github.com/openshift/openshift-azure/pkg/api/2018-09-30-preview/api"
 )
+
+type Walker struct {
+	mogrify func(v reflect.Value)
+}
+
+var dummyPrivateKey *rsa.PrivateKey
+
+func init() {
+	var err error
+	dummyPrivateKey, err = x509.ParsePKCS1PrivateKey([]byte{
+		0x30, 0x25, 0x02, 0x01, 0x00, 0x02, 0x03, 0x00, 0xa2, 0x5f, 0x02, 0x03,
+		0x01, 0x00, 0x01, 0x02, 0x02, 0x43, 0xf1, 0x02, 0x02, 0x00, 0xc5, 0x02,
+		0x02, 0x00, 0xd3, 0x02, 0x02, 0x00, 0x91, 0x02, 0x02, 0x00, 0xad, 0x02,
+		0x02, 0x00, 0xb7,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
 
 // Walk is a recursive struct value population function. Given a pointer to an arbitrarily complex value v, it fills
 // in the complete structure of that value, setting each string with the path taken to reach it.
@@ -23,16 +40,16 @@ import (
 //  - Maps are allocated 1 element
 //  - Only map[string][string] types are supported
 //  - strings are set to the value of the path taken to reach the string
-func Walk(v interface{}) {
+func Walk(v interface{}, mogrify func(v reflect.Value)) {
 	val := reflect.ValueOf(v)
 	if val.Kind() != reflect.Ptr {
 		panic("argument is not a pointer to a value")
 	}
-	walk(val, "")
+	Walker{mogrify: mogrify}.walk(val, "")
 }
 
 // walk fills in the complete structure of a complex value v using path as the root of the labelling.
-func walk(v reflect.Value, path string) {
+func (w Walker) walk(v reflect.Value, path string) {
 	if !v.IsValid() {
 		return
 	}
@@ -46,22 +63,18 @@ func walk(v reflect.Value, path string) {
 		// use a dummy value because the zero value cannot be marshalled
 		v.Set(reflect.ValueOf(dummyPrivateKey))
 		return
-	case []internalapi.IdentityProvider:
-		// set the Provider to AADIdentityProvider
-		v.Set(reflect.ValueOf([]internalapi.IdentityProvider{{Provider: &internalapi.AADIdentityProvider{Kind: "AADIdentityProvider"}}}))
-	case []externalapi.IdentityProvider:
-		// set the Provider to AADIdentityProvider
-		v.Set(reflect.ValueOf([]externalapi.IdentityProvider{{Provider: &externalapi.AADIdentityProvider{Kind: "AADIdentityProvider"}}}))
 	}
+
+	w.mogrify(v)
 
 	switch v.Kind() {
 	case reflect.Interface:
-		walk(v.Elem(), path)
+		w.walk(v.Elem(), path)
 	case reflect.Ptr:
 		if v.IsNil() {
 			v.Set(reflect.New(v.Type().Elem()))
 		}
-		walk(v.Elem(), path)
+		w.walk(v.Elem(), path)
 	case reflect.Struct:
 		// do not go on with the recursion if it isn't one of the core openshift-azure types
 		if !strings.HasPrefix(v.Type().PkgPath(), "github.com/openshift/openshift-azure/") ||
@@ -75,7 +88,7 @@ func walk(v reflect.Value, path string) {
 			}
 			field := v.Field(i)
 			newpath := extendPath(path, v.Type().Field(i).Name, v.Kind())
-			walk(field, newpath)
+			w.walk(field, newpath)
 		}
 	case reflect.Array, reflect.Slice:
 		// if the array/slice has length 0 allocate a new slice of length 1
@@ -85,7 +98,7 @@ func walk(v reflect.Value, path string) {
 		for i := 0; i < v.Len(); i++ {
 			field := v.Index(i)
 			newpath := extendPath(path, strconv.Itoa(i), v.Kind())
-			walk(field, newpath)
+			w.walk(field, newpath)
 		}
 	case reflect.Map:
 		// only map[string]string types are supported
