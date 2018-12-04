@@ -38,3 +38,33 @@ func (c *deploymentsClient) Client() autorest.Client {
 func (c *deploymentsClient) DeploymentClient() resources.DeploymentsClient {
 	return c.DeploymentsClient
 }
+
+// ResourcesClient is a minimal interface for azure Resources Client
+type ResourcesClient interface {
+	ResourceClient() resources.Client
+}
+
+type resourcesClient struct {
+	ResourcesClient resources.Client
+}
+
+var _ ResourcesClient = &resourcesClient{}
+
+// NewResourcesClient creates a new ResourcesClient
+func NewResourcesClient(subscriptionID string, authorizer autorest.Authorizer, languages []string) ResourcesClient {
+	client := resources.NewClient(subscriptionID)
+	client.Authorizer = authorizer
+	client.RequestInspector = addAcceptLanguages(languages)
+
+	return &resourcesClient{
+		ResourcesClient: client,
+	}
+}
+
+func (c *resourcesClient) Client() autorest.Client {
+	return c.ResourcesClient.Client
+}
+
+func (c *resourcesClient) ResourceClient() resources.Client {
+	return c.ResourcesClient
+}
