@@ -34,6 +34,25 @@ var _ = Describe("Resource provider e2e tests [Real]", func() {
 		}
 	})
 
+	It("should keep the end user from deleting any azure resources", func() {
+		resourcegroup, err := cli.OSAResourceGroup(ctx, os.Getenv("RESOURCEGROUP"), os.Getenv("RESOURCEGROUP"), os.Getenv("AZURE_REGION"))
+		Expect(err).NotTo(HaveOccurred())
+		By(fmt.Sprintf("OSA resource group is %s", resourcegroup))
+
+		rc := cli.Resources.ResourceClient()
+		pages, err := rc.ListByResourceGroup(ctx, resourcegroup, "", "", nil)
+		Expect(err).ToNot(HaveOccurred())
+		// attempt to delete all resources in the resourcegroup
+		for pages.NotDone() {
+			for _, v := range pages.Values() {
+				By(fmt.Sprintf("Attempting to delete %s/%s", to.String(v.Type), to.String(v.Name)))
+				_, err := rc.DeleteByID(ctx, to.String(v.ID))
+				Expect(err).To(HaveOccurred())
+			}
+			err = pages.Next()
+		}
+	})
+
 	It("should keep the end user from reading the config blob", func() {
 		resourcegroup, err := cli.OSAResourceGroup(ctx, os.Getenv("RESOURCEGROUP"), os.Getenv("RESOURCEGROUP"), os.Getenv("AZURE_REGION"))
 		Expect(err).NotTo(HaveOccurred())
