@@ -41,11 +41,12 @@ func (c *deploymentsClient) DeploymentClient() resources.DeploymentsClient {
 
 // ResourcesClient is a minimal interface for azure Resources Client
 type ResourcesClient interface {
-	ResourceClient() resources.Client
+	DeleteByID(ctx context.Context, resourceID string) (result resources.DeleteByIDFuture, err error)
+	ListByResourceGroup(ctx context.Context, resourceGroupName string, filter string, expand string, top *int32) (result resources.ListResultPage, err error)
 }
 
 type resourcesClient struct {
-	ResourcesClient resources.Client
+	resources.Client
 }
 
 var _ ResourcesClient = &resourcesClient{}
@@ -57,14 +58,6 @@ func NewResourcesClient(subscriptionID string, authorizer autorest.Authorizer, l
 	client.RequestInspector = addAcceptLanguages(languages)
 
 	return &resourcesClient{
-		ResourcesClient: client,
+		Client: client,
 	}
-}
-
-func (c *resourcesClient) Client() autorest.Client {
-	return c.ResourcesClient.Client
-}
-
-func (c *resourcesClient) ResourceClient() resources.Client {
-	return c.ResourcesClient
 }
