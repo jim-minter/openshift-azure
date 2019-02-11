@@ -37,14 +37,8 @@ var (
 
 		// GENERAL PURPOSE VMS
 
-		api.StandardD4sV3:  {},
-		api.StandardD8sV3:  {},
-		api.StandardD16sV3: {},
 		api.StandardD32sV3: {},
 		api.StandardD64sV3: {},
-
-		// TODO: consider enabling storage optimized (Ls) series for masters and
-		// moving the etcd onto the VM SSD storage.
 
 		// TODO: enable vertical scaling of existing OSA clusters.
 	}
@@ -52,7 +46,7 @@ var (
 	validComputeVMSizes = map[api.VMSize]struct{}{
 		// Rationale here is: modern offerings per (general purpose /
 		// memory-optimized / compute-optimized / storage-optimized) family,
-		// with at least 16GiB RAM, 32GiB SSD, 8 data disks, premium storage
+		// with at least 16GiB RAM, 256GiB SSD, 8 data disks, premium storage
 		// support.  GPU and HPC use cases are probably blocked for now on
 		// drivers / multiple agent pool support.
 
@@ -61,30 +55,17 @@ var (
 		// Skiping StandardB* (burstable) VMs for now as they could be hard to
 		// reason about performance-wise.
 
-		api.StandardD4sV3:  {},
-		api.StandardD8sV3:  {},
-		api.StandardD16sV3: {},
 		api.StandardD32sV3: {},
 		api.StandardD64sV3: {},
 
-		api.StandardDS4V2: {},
-		api.StandardDS5V2: {},
-
 		// COMPUTE OPTIMIZED VMS
 
-		api.StandardF8sV2:  {},
-		api.StandardF16sV2: {},
 		api.StandardF32sV2: {},
 		api.StandardF64sV2: {},
 		api.StandardF72sV2: {},
 
-		api.StandardF8s:  {},
-		api.StandardF16s: {},
-
 		// MEMORY OPTIMIZED VMS
 
-		api.StandardE4sV3:  {},
-		api.StandardE8sV3:  {},
 		api.StandardE16sV3: {},
 		api.StandardE20sV3: {},
 		api.StandardE32sV3: {},
@@ -93,13 +74,10 @@ var (
 		// Skipping StandardM* for now as they may require significant extra
 		// effort/spend to certify and support.
 
-		api.StandardGS2: {},
 		api.StandardGS3: {},
 		api.StandardGS4: {},
 		api.StandardGS5: {},
 
-		api.StandardDS12V2: {},
-		api.StandardDS13V2: {},
 		api.StandardDS14V2: {},
 		api.StandardDS15V2: {},
 
