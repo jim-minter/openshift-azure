@@ -452,20 +452,6 @@ spec:
     - -c
     image: {{ .Config.Images.MasterEtcd | quote }}
     imagePullPolicy: Always
-    livenessProbe:
-      exec:
-        command:
-        - etcdctl
-        - --ca-file
-        - /etc/etcd/ca.crt
-        - --cert-file
-        - /etc/etcd/peer.crt
-        - --key-file
-        - /etc/etcd/peer.key
-        - --endpoints
-        - https://$(hostname):2379
-        - cluster-health
-      initialDelaySeconds: 45
     name: etcd
     securityContext:
       privileged: true

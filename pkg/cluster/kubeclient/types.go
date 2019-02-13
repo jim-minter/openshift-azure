@@ -8,6 +8,7 @@ package kubeclient
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -42,6 +43,10 @@ func NewKubeclient(log *logrus.Entry, config *v1.Config, pluginConfig *api.Plugi
 	restconfig, err := managedcluster.RestConfigFromV1Config(config)
 	if err != nil {
 		return nil, err
+	}
+	restconfig.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		rt.(*http.Transport).DisableKeepAlives = true
+		return rt
 	}
 	cli, err := kubernetes.NewForConfig(restconfig)
 	if err != nil {
