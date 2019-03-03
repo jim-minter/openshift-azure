@@ -160,13 +160,13 @@ func updateAadApplication(ctx context.Context, log *logrus.Entry, conf *fakerp.C
 			return fmt.Errorf("cannot get authorizer: %v", err)
 		}
 		aadClient := azureclient.NewRBACApplicationsClient(ctx, conf.TenantID, authorizer)
-		objID, err := aadapp.GetObjectIDUsingRbacClient(ctx, aadClient, conf.AADClientID)
+		objID, err := aadapp.GetApplicationObjectIDFromAppID(ctx, aadClient, conf.AADClientID)
 		if err != nil {
 			return err
 		}
 
 		callbackURL := fmt.Sprintf("https://%s.%s.cloudapp.azure.com/oauth2callback/Azure%%20AD", conf.ResourceGroup, conf.Region)
-		conf.AADClientSecret, err = aadapp.UpdateSecret(ctx, aadClient, objID, callbackURL)
+		conf.AADClientSecret, err = aadapp.UpdateAADApp(ctx, aadClient, objID, callbackURL)
 		if err != nil {
 			return fmt.Errorf("cannot update aad app secret: %v", err)
 		}
