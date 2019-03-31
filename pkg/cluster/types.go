@@ -135,6 +135,52 @@ func NewSimpleUpgrader(ctx context.Context, log *logrus.Entry, cs *api.OpenShift
 	return u, nil
 }
 
+func NewFakeUpgrader(
+	ctx context.Context,
+	log *logrus.Entry,
+	cs *api.OpenShiftManagedCluster,
+	accountsClient azureclient.AccountsClient,
+	vmc azureclient.VirtualMachineScaleSetVMsClient,
+	ssc azureclient.VirtualMachineScaleSetsClient,
+	kvc azureclient.KeyVaultClient,
+	storageClient storage.Client,
+	bsc storage.BlobStorageClient,
+	httpClient wait.SimpleHTTPClient,
+	kubeclient kubeclient.Kubeclient,
+	scalerFactory scaler.Factory,
+	testConfig api.TestConfig,
+) (*simpleUpgrader, error) {
+	arm, err := arm.New(ctx, log, cs, testConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &simpleUpgrader{
+		Kubeclient: kubeclient,
+
+		testConfig:     testConfig,
+		accountsClient: accountsClient,
+		vmc:            vmc,
+		ssc:            ssc,
+		kvc:            kvc,
+		log:            log,
+		scalerFactory:  scalerFactory,
+		hasher: &hasher{
+			log:            log,
+			testConfig:     testConfig,
+			startupFactory: startup.New,
+			arm:            arm,
+		},
+		arm:                arm,
+		cs:                 cs,
+		getConsoleClient:   func(*api.OpenShiftManagedCluster) wait.SimpleHTTPClient { return httpClient },
+		getAPIServerClient: func(*api.OpenShiftManagedCluster) wait.SimpleHTTPClient { return httpClient },
+
+		storageClient:     storageClient,
+		updateBlobService: updateblob.NewBlobService(bsc),
+	}, nil
+}
+
 func (u *simpleUpgrader) EnrichCertificatesFromVault(ctx context.Context) error {
 	return enrich.CertificatesFromVault(ctx, u.kvc, u.cs)
 }

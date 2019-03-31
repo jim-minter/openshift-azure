@@ -3,11 +3,15 @@ package tls
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"strings"
+
+	"github.com/openshift/openshift-azure/pkg/util/tls"
 )
 
 var (
 	DummyPrivateKey  *rsa.PrivateKey
 	DummyCertificate *x509.Certificate
+	DummyBundle      string
 )
 
 func init() {
@@ -68,4 +72,20 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	sb := &strings.Builder{}
+
+	b, err := tls.PrivateKeyAsBytes(DummyPrivateKey)
+	if err != nil {
+		panic(err)
+	}
+	sb.Write(b)
+
+	b, err = tls.CertAsBytes(DummyCertificate)
+	if err != nil {
+		panic(err)
+	}
+	sb.Write(b)
+
+	DummyBundle = sb.String()
 }
